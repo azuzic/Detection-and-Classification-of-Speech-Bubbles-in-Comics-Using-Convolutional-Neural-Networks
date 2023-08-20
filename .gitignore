@@ -1,0 +1,38 @@
+# Compiled Python files
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+*.env
+
+# Project-specific files
+*.log
+db.sqlite3
+
+# IDE / editor specific files
+.idea/
+.vscode/
+*.pydevproject
+*.pyc
+
+# Jupyter Notebook / Jupyter Lab
+.ipynb_checkpoints/
+
+# Local settings
+*.env
+
+# Ignore Python package installer metadata
+pip-*.log
+
+# Ignore VS Code's workspace settings
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
