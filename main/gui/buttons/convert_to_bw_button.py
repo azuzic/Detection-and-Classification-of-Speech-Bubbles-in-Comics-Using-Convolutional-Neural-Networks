@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QPushButton
 from image_manipulation import convertToBW, resizeImage
 
-class ConvertToBW(QPushButton):
+class ConvertToBWButton(QPushButton):
     def __init__(self, parent, image_label, image_info_label):
         super().__init__("Convert to BW", parent)
         self.image_label = image_label

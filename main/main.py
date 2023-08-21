@@ -9,7 +9,7 @@ if __name__ == "__main__":
     set_fusion_style(app)
 
     window = MainWindow()
-    window.resize(600, 600)
+    window.resize(800, 1000)
     window.show()
 
     sys.exit(app.exec_())
