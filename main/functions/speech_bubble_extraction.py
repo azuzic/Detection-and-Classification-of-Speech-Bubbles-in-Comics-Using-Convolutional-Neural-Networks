@@ -46,6 +46,52 @@ def group_boxes(boxes):
     log(f'{bold(color("#a477b8","✅ Clustering of nearby boxes completed."))}', True)
     return grouped_boxes
 
+def findSpeechBubbleContour(cv_image, rect_coordinates):
+    x1, y1 = rect_coordinates[0]
+    x2, y2 = rect_coordinates[1]
+
+    # Dilate the rectangle slightly
+    dilation_factor = 1.2
+    dilated_x1 = int(x1 - (x2 - x1) * (dilation_factor - 1) / 2)
+    dilated_x2 = int(x2 + (x2 - x1) * (dilation_factor - 1) / 2)
+    dilated_y1 = int(y1 - (y2 - y1) * (dilation_factor - 1) / 2)
+    dilated_y2 = int(y2 + (y2 - y1) * (dilation_factor - 1) / 2)
+
+    # Crop the dilated region
+    dilated_region = cv_image[dilated_y1:dilated_y2, dilated_x1:dilated_x2]
+
+    # Convert to grayscale
+    gray_dilated = cv2.cvtColor(dilated_region, cv2.COLOR_BGR2GRAY)
+
+    # Threshold the grayscale image to create a binary mask
+    _, thresholded = cv2.threshold(gray_dilated, 1, 255, cv2.THRESH_BINARY)
+
+    # Find contours in the mask
+    contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Filter contours based on size and shape
+    for contour in contours:
+        if cv2.contourArea(contour) > 1000:  # Adjust the threshold based on your use case
+            return contour
+
+    return None
+
+def drawBoxes(grouped_boxes, cv_image, self, pixmap):
+    for index, (bbox, text) in enumerate(grouped_boxes):
+            x_points, y_points = zip(*bbox)
+            x1, x2 = int(min(x_points)), int(max(x_points))
+            y1, y2 = int(min(y_points)), int(max(y_points))
+            
+            cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 0, 255), 1)
+
+            cv2.putText(cv_image, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+
+            empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
+            setEmptyImage(empty_image)
+            setImage(self, pixmap, False)
+            log(f'Completed processing box {bold(color("#4eaf4a",f"[{index+1}]"))}', True)
+            QApplication.processEvents()
+
 def detect_and_draw_speech_bubbles(self, pixmap):
     empty_image = getEmptyImage()
     log(f'', True)
@@ -54,30 +100,17 @@ def detect_and_draw_speech_bubbles(self, pixmap):
     
     try:
         cv_image = cv2.cvtColor(np.array(empty_image), cv2.COLOR_RGB2BGR)
-        
         gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
         log(f'{bold(color("#db3030","📖 Commencing EasyOCR text extraction..."))}', True)
         reader = easyocr.Reader(lang_list=['en']) 
-
         results = reader.readtext(gray_image)
         log(f'{bold(color("#db3030","✅ EasyOCR reader concluded."))}', True)
 
         grouped_boxes = group_boxes(results)
 
         log(f'{bold(color("#c9b34f","🖋️ Commencing drawing of boxes and text."))}', True)
-        for index, (bbox, text) in enumerate(grouped_boxes):
-            x_points, y_points = zip(*bbox)
-            x1, x2 = int(min(x_points)), int(max(x_points))
-            y1, y2 = int(min(y_points)), int(max(y_points))
-            cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 0, 255), 1)
-            cv2.putText(cv_image, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-
-            empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-            setEmptyImage(empty_image)
-            setImage(self, pixmap, False)
-            log(f'Completed processing box {bold(color("#4eaf4a",f"[{index+1}]"))}', True)
-            QApplication.processEvents()
+        drawBoxes(grouped_boxes, cv_image, self, pixmap)
         log(f'{bold(color("#c9b34f","✅ Box and text drawing completed successfully."))}', True)
 
         log(f'{bold(color("#00c8ff","✅ Speech bubble detection process successfully accomplished."))}', True)
