@@ -5,11 +5,9 @@ from gui.gui_colors import set_fusion_style
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
     set_fusion_style(app)
 
     window = MainWindow()
-    window.resize(800, 1000)
     window.show()
 
     sys.exit(app.exec_())

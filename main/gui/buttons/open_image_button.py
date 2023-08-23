@@ -1,19 +1,14 @@
 from PyQt5.QtWidgets import QPushButton
-from image_manipulation import open_image_dialog, resizeImage
+from functions.image_manipulation import open_image_dialog, setImage
 
 class OpenImageButton(QPushButton):
-    def __init__(self, parent, image_label, image_info_label):
+    def __init__(self, parent, image):
         super().__init__("Open Image", parent)
-        self.image_label = image_label
-        self.image_info_label = image_info_label
+        self.image = image
         self.clicked.connect(self.open_image_and_display)
 
     def open_image_and_display(self):
         open_image_dialog()
 
-        pixmap = self.image_label.pixmap()
-        pixmap = resizeImage(self, pixmap)
-
-        # Update image info label
-        info = f"Image Size: {pixmap.width()} x {pixmap.height()}\n"
-        self.image_info_label.setText(info)
+        pixmap = self.image.pixmap()
+        pixmap = setImage(self, pixmap)

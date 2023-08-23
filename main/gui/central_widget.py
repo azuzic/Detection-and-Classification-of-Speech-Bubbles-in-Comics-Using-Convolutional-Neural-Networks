@@ -23,10 +23,10 @@ class CentralWidget(QWidget):
         # Buttons
         buttons_layout = QHBoxLayout()
 
-        self.open_image_button = OpenImageButton(self, self.labels_layout.image_label, self.labels_layout.image_info_label)
-        self.convert_to_bw_button = ConvertToBWButton(self, self.labels_layout.image_label, self.labels_layout.image_info_label)
-        self.enchance_image_button = EnchanceImageButton(self, self.labels_layout.image_label, self.labels_layout.image_info_label)
-        self.find_speech_bubbles_button = FindSpeechBubblesButton(self, self.labels_layout.image_label, self.labels_layout.image_info_label)
+        self.open_image_button = OpenImageButton(self, self.labels_layout.image)
+        self.convert_to_bw_button = ConvertToBWButton(self, self.labels_layout.image)
+        self.enchance_image_button = EnchanceImageButton(self, self.labels_layout.image)
+        self.find_speech_bubbles_button = FindSpeechBubblesButton(self, self.labels_layout.image)
 
         buttons_layout.addWidget(self.open_image_button)
         buttons_layout.addWidget(self.convert_to_bw_button)
