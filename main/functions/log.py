@@ -13,7 +13,7 @@ def bold(text):
 def initialise_log(gui):
     global console_log_gui
     console_log_gui = gui
-    log("Console Log GUI initialized !", True)
+    log("⚙️ Console Log GUI initialized !", True)
     
 def log(text, br):
     global logs, counter, console_log_gui

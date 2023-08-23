@@ -8,6 +8,14 @@ import os
 image_size = 800
 empty_image = Image.new("RGBA", (image_size, image_size), (11, 12, 18, 255))
 
+def getEmptyImage():
+    global empty_image
+    return empty_image
+
+def setEmptyImage(image):
+    global empty_image
+    empty_image = image
+
 def open_image_dialog():
     global empty_image
     options = QFileDialog.Options()
@@ -18,7 +26,7 @@ def open_image_dialog():
     if file_name:
         empty_image = Image.open(file_name)
         file_name = os.path.basename(file_name)
-        log(f' Image {bold(color("#7170c4", file_name))} opened !', True)
+        log(f'🖼️ Image {bold(color("#7170c4", file_name))} opened ! ', True)
 
 def convertToBW():
     global empty_image
@@ -34,7 +42,7 @@ def imageContrast(factor):
     empty_image = adjusted_image
     log(f'Increased image {bold("contrast")} by a factor of {color("#70c4a0" , factor)} !', True)
 
-def setImage(self, pixmap):
+def setImage(self, pixmap, debug=True):
     global empty_image
     global image_size
     img = empty_image.convert("RGBA")
@@ -62,16 +70,17 @@ def setImage(self, pixmap):
     self.image.setPixmap(pixmap)
     self.image.setScaledContents(True)
 
-    log(f'{color("#bf9858" ," Image set ! ")} ', True)
+    if debug:
+        log(f'{color("#bf9858" ,"🖼️ Image set ! ")} ', True)
 
-    log(f'{bold("Height")}: {color("#70c4a0" , f"{qimage.size().height()} px")}', False)
+        log(f'{bold("Height")}: {color("#70c4a0" , f"{qimage.size().height()} px")}', False)
 
-    log(f'{bold(color("#bf9858" , " | "))}', False)
-    
-    log(f'{bold("Width")}: {color("#70c4a0" , f"{qimage.size().width()} px")}', False)
+        log(f'{bold(color("#bf9858" , " | "))}', False)
+        
+        log(f'{bold("Width")}: {color("#70c4a0" , f"{qimage.size().width()} px")}', False)
 
-    log(f'{bold(color("#bf9858" , " | "))}', False)
-    
-    log(f'{bold("Aspect_Ratio")}: {color("#70c4a0" , aspect_ratio)}', False)
+        log(f'{bold(color("#bf9858" , " | "))}', False)
+        
+        log(f'{bold("Aspect_Ratio")}: {color("#70c4a0" , aspect_ratio)}', False)
 
     return pixmap

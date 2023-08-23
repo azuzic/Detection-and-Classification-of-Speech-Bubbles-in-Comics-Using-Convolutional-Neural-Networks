@@ -12,4 +12,3 @@ class FindSpeechBubblesButton(QPushButton):
 
         if pixmap:   
             detect_and_draw_speech_bubbles(self, pixmap)
-            pixmap = setImage(self, pixmap)

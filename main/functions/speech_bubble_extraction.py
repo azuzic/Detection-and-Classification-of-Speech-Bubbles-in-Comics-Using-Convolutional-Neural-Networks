@@ -4,10 +4,11 @@ import numpy as np
 import easyocr
 import cv2
 
-from functions.image_manipulation import empty_image, setImage
+from functions.image_manipulation import getEmptyImage, setEmptyImage, setImage
 from functions.log import log, color, bold
 
 def group_boxes(boxes):
+    log(f'{bold(color("#a477b8","📁 Beginning the process of clustering nearby boxes."))}', True)
     grouped_boxes = []
     
     while boxes:
@@ -42,62 +43,51 @@ def group_boxes(boxes):
         
         grouped_boxes.append((((x1, y1), (x2, y2)), combined_text))
     
+    log(f'{bold(color("#a477b8","✅ Clustering of nearby boxes completed."))}', True)
     return grouped_boxes
 
-def detect_and_draw_speech_bubbles2(self, pixmap):
-    global empty_image
-    print(empty_image)
-    log(f'{bold(color("#00c8ff","Initiating speech bubble detection process ..."))}', True)
+def detect_and_draw_speech_bubbles(self, pixmap):
+    empty_image = getEmptyImage()
+    log(f'', True)
+    log(f'🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 ', True)
+    log(f'{bold(color("#00c8ff","🔍 Initiating speech bubble detection process ..."))}', True)
     
     try:
         cv_image = cv2.cvtColor(np.array(empty_image), cv2.COLOR_RGB2BGR)
-        print(cv_image)
         
         gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-        print(gray_image)
 
-        log(f'{bold(color("#45d163","Commencing EasyOCR text extraction..."))}', True)
+        log(f'{bold(color("#db3030","📖 Commencing EasyOCR text extraction..."))}', True)
         reader = easyocr.Reader(lang_list=['en']) 
 
         results = reader.readtext(gray_image)
-        print(results)
-        log(f'{bold(color("#db3030","EasyOCR reader concluded."))}', True)
+        log(f'{bold(color("#db3030","✅ EasyOCR reader concluded."))}', True)
 
         grouped_boxes = group_boxes(results)
-        print(grouped_boxes)
-        log(f'{grouped_boxes}', True)
 
-        for (bbox, text) in grouped_boxes:
+        log(f'{bold(color("#c9b34f","🖋️ Commencing drawing of boxes and text."))}', True)
+        for index, (bbox, text) in enumerate(grouped_boxes):
             x_points, y_points = zip(*bbox)
-            x1, x2 = min(x_points), max(x_points)
-            y1, y2 = min(y_points), max(y_points)
+            x1, x2 = int(min(x_points)), int(max(x_points))
+            y1, y2 = int(min(y_points)), int(max(y_points))
             cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 0, 255), 1)
             cv2.putText(cv_image, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
             empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-            setImage(self, pixmap)
+            setEmptyImage(empty_image)
+            setImage(self, pixmap, False)
+            log(f'Completed processing box {bold(color("#4eaf4a",f"[{index+1}]"))}', True)
             QApplication.processEvents()
+        log(f'{bold(color("#c9b34f","✅ Box and text drawing completed successfully."))}', True)
+
+        log(f'{bold(color("#00c8ff","✅ Speech bubble detection process successfully accomplished."))}', True)
+        log(f'🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 ', True)
+        log(f'', True)
     
     except Exception as e:
+        log(f'', True)
+        log(f'❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ', True)
+        log(f'{bold(color("#ff0000","💥 An error occurred:"))} {str(e)}', True)
+        log(f'❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ', True)
+        log(f'', True)
         print(f"An error occurred: {str(e)}")
-
-def detect_and_draw_speech_bubbles(self, pixmap):
-    global empty_image
-    
-    cv_image = cv2.cvtColor(np.array(empty_image), cv2.COLOR_RGB2BGR)
-    
-    gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-
-    reader = easyocr.Reader(lang_list=['en'])  # Specify the language(s) you want to detect
-
-    results = reader.readtext(gray_image)
-    print(results)
-
-    for (bbox, text, prob) in results:
-        x1, y1, x2, y2 = bbox
-        cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 0, 255), 1)
-        cv2.putText(cv_image, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-
-    empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-    setImage(self, pixmap)
-    QApplication.processEvents()
