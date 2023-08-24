@@ -1,7 +1,8 @@
-
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QScrollArea
 from PyQt5.QtCore import Qt
-from functions.log import initialise_log
+from PyQt5.QtWidgets import QWidget, QLabel, QScrollArea, QVBoxLayout, QHBoxLayout, QFrame, QStackedLayout
+
+from functions.log import initialiseLog
+from functions.speech_bubble_extraction import initialiseImageLayout
 
 class GuiImage(QWidget):
     def __init__(self, parent=None):
@@ -9,24 +10,31 @@ class GuiImage(QWidget):
 
         # Main layout
         main_layout = QHBoxLayout(self)
-        main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        # Layout for image
-        image_layout = QVBoxLayout()
-        image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        image_widget = QWidget()
-        image_widget.setLayout(image_layout)
-        image_widget.setStyleSheet("background-color: #0b0c12;")
-        image_layout.setContentsMargins(0, 0, 0, 0)  
-        image_layout.setSpacing(0) 
-        image_widget.setFixedSize(800, 800) 
-        main_layout.addWidget(image_widget)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Create the container frame
+        container_frame = QFrame()
+        container_frame.setFixedSize(800, 800)
+        container_frame.setStyleSheet("background-color: #0b0c12;")
+        main_layout.addWidget(container_frame)
+
+        # Create a stacked layout for the container frame
+        self.container_layout = QHBoxLayout(container_frame)
+        self.container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self.container_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Main Image
+        self.image = QLabel()
+        self.image.setMinimumSize(800, 800)
+        self.image.setStyleSheet("background-color: #0b0c12;")
+        self.container_layout.addWidget(self.image)
 
         # Layout for log
         log_layout = QVBoxLayout()
         log_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         log_widget = QWidget()
-        log_widget.setFixedSize(800, 800) 
+        log_widget.setFixedSize(800, 800)
         log_widget.setLayout(log_layout)
         log_widget.setStyleSheet("background-color: #0b0c12;")
         main_layout.addWidget(log_widget)
@@ -37,16 +45,15 @@ class GuiImage(QWidget):
         self.log_scroll_area.setWidgetResizable(True)
         log_layout.addWidget(self.log_scroll_area)
         
-        # Image 
-        self.image = QLabel(parent)
-        self.image.setMinimumSize(800, 800)
-        self.image.setStyleSheet("background-color: #0b0c12;")
-        image_layout.addWidget(self.image)
-        
         # Log
         self.log = QLabel("", parent)
         self.log.setStyleSheet("color: #c8d8de;")
-        initialise_log(self.log)
+        initialiseLog(self.log)
         self.log.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.log.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.log_scroll_area.setWidget(self.log)
+
+        self.container = QWidget(self)
+        self.container.setGeometry(0, 0, 800, 800)
+
+        initialiseImageLayout(self)

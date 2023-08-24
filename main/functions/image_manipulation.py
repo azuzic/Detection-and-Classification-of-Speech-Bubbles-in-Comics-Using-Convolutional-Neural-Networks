@@ -1,3 +1,4 @@
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QFileDialog, QSizePolicy
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt
@@ -27,6 +28,8 @@ def open_image_dialog():
         empty_image = Image.open(file_name)
         file_name = os.path.basename(file_name)
         log(f'🖼️ Image {bold(color("#7170c4", file_name))} opened ! ', True)
+        return True
+    return False
 
 def convertToBW():
     global empty_image
@@ -72,15 +75,12 @@ def setImage(self, pixmap, debug=True):
 
     if debug:
         log(f'{color("#bf9858" ,"🖼️ Image set ! ")} ', True)
-
         log(f'{bold("Height")}: {color("#70c4a0" , f"{qimage.size().height()} px")}', False)
-
-        log(f'{bold(color("#bf9858" , " | "))}', False)
-        
+        log(f'{bold(color("#bf9858" , " | "))}', False)   
         log(f'{bold("Width")}: {color("#70c4a0" , f"{qimage.size().width()} px")}', False)
-
         log(f'{bold(color("#bf9858" , " | "))}', False)
-        
         log(f'{bold("Aspect_Ratio")}: {color("#70c4a0" , aspect_ratio)}', False)
+
+    QApplication.processEvents()
 
     return pixmap

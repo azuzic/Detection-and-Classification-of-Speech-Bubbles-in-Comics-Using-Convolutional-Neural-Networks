@@ -10,7 +10,7 @@ def color(color, text):
 def bold(text):
     return (f"<b>{text}</b>")
 
-def initialise_log(gui):
+def initialiseLog(gui):
     global console_log_gui
     console_log_gui = gui
     log("⚙️ Console Log GUI initialized !", True)
