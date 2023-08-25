@@ -8,6 +8,11 @@ import os
 
 image_size = 800
 empty_image = Image.new("RGBA", (image_size, image_size), (11, 12, 18, 255))
+image_name = ""
+
+def getImageName():
+    global image_name
+    return image_name
 
 def getEmptyImage():
     global empty_image
@@ -18,7 +23,7 @@ def setEmptyImage(image):
     empty_image = image
 
 def open_image_dialog():
-    global empty_image
+    global empty_image, image_name
     options = QFileDialog.Options()
     options |= QFileDialog.ReadOnly
 
@@ -42,6 +47,7 @@ def open_image_dialog():
             empty_image = original_image
         
         log(f'🖼️ Image {bold(color("#7170c4", file_name))} opened ! ', True)
+        image_name = os.path.splitext(file_name)[0]
         return True
     return False
 

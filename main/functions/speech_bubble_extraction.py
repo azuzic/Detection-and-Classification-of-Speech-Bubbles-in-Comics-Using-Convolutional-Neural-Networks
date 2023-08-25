@@ -2,13 +2,15 @@ from PyQt5.QtWidgets import QApplication
 from PIL import Image
 import numpy as np
 import easyocr
+import secrets
 import cv2
 
 from PyQt5.QtWidgets import QLabel
 
-from functions.image_manipulation import getEmptyImage, setEmptyImage, setImage
-from functions.log import log, color, bold, error
+from functions.image_manipulation import getEmptyImage, setEmptyImage, setImage, getImageName
+from functions.log import log, color, bold, error, logClear
 
+lang = "en"
 self = None
 self2 = None
 pixmap2 = None
@@ -18,6 +20,10 @@ magenta_pixel_coordinates = set()
 area_bw = None
 centers = set()
 from collections import Counter
+
+def setLang(value):
+    global lang
+    lang = value
 
 def initialiseImageLayout(gui):
     global self
@@ -119,12 +125,9 @@ def exploreAndColor(x, y, cv_image, area_bw):
                         new_x = x + dx
                         new_y = y + dy
                         if new_x >= 0 and new_x < area_bw.shape[1] and new_y >= 0 and new_y < area_bw.shape[0]:
-                            cv_image[new_y, new_x] = [0, 255, 0]  # Color it green
+                            #cv_image[new_y, new_x] = [0, 255, 0]  # Color it green
                             area_bw[new_y, new_x] = 128
                             pixelsGreen.add((new_y, new_x))
-                    empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-                    setEmptyImage(empty_image)
-                    setImage(self2, pixmap2, False)
                     exit = True
                 if exit:
                     continue
@@ -132,7 +135,7 @@ def exploreAndColor(x, y, cv_image, area_bw):
         if area_bw[y, x] == 128:
             continue
 
-        cv_image[y, x] = [200, 200, 200]
+        #cv_image[y, x] = [200, 200, 200]
         area_bw[y, x] = 128
         pixelsGray.add((y, x))
 
@@ -140,6 +143,14 @@ def exploreAndColor(x, y, cv_image, area_bw):
         stack.append((x + 1, y))
         stack.append((x, y - 1))
         stack.append((x, y + 1))
+    
+    log(f'{bold(color("#d1cd4b","💬 Gray pixel count is: "))} {len(pixelsGray)}', True)
+    log(f'{bold(color("#d1cd4b","💬 Green pixel count is: "))} {len(pixelsGreen)}', True)
+    if len(pixelsGray) < 20000 and len(pixelsGreen) < 10000:
+        for x, y in pixelsGray:
+            cv_image[x, y] = [200, 200, 200]
+        for x, y in pixelsGreen:
+            cv_image[x, y] = [0, 255, 0]
 
 def fillArea(x1, x2, y1, y2, cv_image):
     global magenta_pixel_coordinates, area_bw, centers
@@ -275,14 +286,15 @@ def drawBoxes(grouped_boxes, cv_image, self, pixmap):
 
         empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
         setEmptyImage(empty_image)
-        setImage(self, pixmap)
+        setImage(self, pixmap, False)
         log(f'Completed processing box {bold(color("#4eaf4a",f"[{index+1}]"))}', True)
     log(f'{bold(color("#c9b34f","✅ Box and text drawing completed successfully."))}', True)
 
 def detect_and_draw_speech_bubbles(self, pixmap):
-    global self2, pixmap2, area_bw
+    global self2, pixmap2, area_bw, lang
     self2 = self
     pixmap2 = pixmap
+    logClear()
     deleteBoxes()
     QApplication.processEvents()
     empty_image = getEmptyImage()
@@ -294,7 +306,7 @@ def detect_and_draw_speech_bubbles(self, pixmap):
     gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
     log(f'{bold(color("#db3030","📖 Commencing EasyOCR text extraction..."))}', True)
-    reader = easyocr.Reader(lang_list=['en', 'ja'])
+    reader = easyocr.Reader(lang_list=[lang])
     results = reader.readtext(gray_image)
     log(f'{bold(color("#db3030","✅ EasyOCR reader concluded."))}', True)
 
@@ -311,6 +323,8 @@ def detect_and_draw_speech_bubbles(self, pixmap):
     drawBoxes(grouped_boxes, cv_image, self, pixmap)
     colorBubble(cv_image)
     colorText(cv_image)
+
+    cv2.imwrite(f'output/{getImageName()}.jpg', cv_image)
 
     log(f'{bold(color("#00c8ff","✅ Speech bubble detection process successfully accomplished."))}', True)
     log(f'🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 ', True)

@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QHBoxLayout, QComboBox
 from gui.gui_image import GuiImage
 from gui.buttons.open_image_button import OpenImageButton
 from gui.buttons.convert_to_bw_button import ConvertToBWButton
 from gui.buttons.enchance_image_button import EnchanceImageButton
 from gui.buttons.find_speech_bubbles_button import FindSpeechBubblesButton
 from PyQt5.QtCore import Qt
+from functions.speech_bubble_extraction import setLang
 
 class CentralWidget(QWidget):
     def __init__(self):
@@ -15,6 +16,12 @@ class CentralWidget(QWidget):
         self.message_label = QLabel("Detection and Classification of Speech Bubbles in Comics Using Convolutional Neural Networks", self)
         self.message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center-align text
         layout.addWidget(self.message_label, alignment=Qt.AlignmentFlag.AlignTop)
+
+        # Language dropdown
+        self.language_combo_box = QComboBox(self)
+        self.language_combo_box.addItems(["English", "Japanese", "French"])
+        self.language_combo_box.currentIndexChanged.connect(self.language_selected)
+        layout.addWidget(self.language_combo_box, alignment=Qt.AlignmentFlag.AlignTop)
 
         # Set image/info layout 
         self.labels_layout = GuiImage(self)
@@ -35,3 +42,12 @@ class CentralWidget(QWidget):
 
         # Add the buttons layout to the main layout
         layout.addLayout(buttons_layout)
+
+    def language_selected(self, index):
+        selected_language = self.language_combo_box.currentText()
+        if (selected_language == "English"):
+            setLang("en")
+        if (selected_language == "Japanese"):
+            setLang("ja")
+        if (selected_language == "French"):
+            setLang("fr")
