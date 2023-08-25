@@ -25,8 +25,22 @@ def open_image_dialog():
     file_name, _ = QFileDialog.getOpenFileName(None, "Open Image File", "", "Image Files (*.jpg *.png *.bmp *.jpeg);;All Files (*)", options=options)
     
     if file_name:
-        empty_image = Image.open(file_name)
+        original_image = Image.open(file_name)
         file_name = os.path.basename(file_name)
+        
+        # Resize the image if its width or height is bigger than 800
+        if original_image.width > 800 or original_image.height > 800:
+            aspect_ratio = original_image.width / original_image.height
+            if original_image.width > original_image.height:
+                new_width = 800
+                new_height = int(new_width / aspect_ratio)
+            else:
+                new_height = 800
+                new_width = int(new_height * aspect_ratio)
+            empty_image = original_image.resize((new_width, new_height))
+        else:
+            empty_image = original_image
+        
         log(f'🖼️ Image {bold(color("#7170c4", file_name))} opened ! ', True)
         return True
     return False
@@ -62,14 +76,13 @@ def setImage(self, pixmap, debug=True):
     if new_label_width > image_size:
         self.image.setFixedWidth(image_size)
         self.image.setFixedHeight(image_size * aspect_ratio)
-        pixmap = pixmap.scaledToWidth(image_size, Qt.TransformationMode.SmoothTransformation)
+        pixmap = pixmap.scaledToWidth(image_size, Qt.TransformationMode.FastTransformation)
     else:
         self.image.setFixedWidth(image_size * aspect_ratio)
         self.image.setFixedHeight(image_size)
-        pixmap = pixmap.scaledToWidth(image_size * aspect_ratio, Qt.TransformationMode.SmoothTransformation)
+        pixmap = pixmap.scaledToWidth(image_size * aspect_ratio, Qt.TransformationMode.FastTransformation)
 
     self.image.setMinimumSize(pixmap.width(), pixmap.height())
-
     self.image.setPixmap(pixmap)
     self.image.setScaledContents(True)
 

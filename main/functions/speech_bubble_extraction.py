@@ -7,11 +7,16 @@ import cv2
 from PyQt5.QtWidgets import QLabel
 
 from functions.image_manipulation import getEmptyImage, setEmptyImage, setImage
-from functions.log import log, color, bold
+from functions.log import log, color, bold, error
 
 self = None
+self2 = None
+pixmap2 = None
 overlay = None
 boxes = []
+magenta_pixel_coordinates = set()
+area_bw = None
+centers = set()
 from collections import Counter
 
 def initialiseImageLayout(gui):
@@ -51,7 +56,7 @@ def drawBox(w,h,x,y,cv_image,text):
     box = QLabel(self.container)
     box.setGeometry(x,y,w,h)
     box.setText(text)
-    box.setStyleSheet("background-color: rgba(255, 0, 0, 127); font-weight: bold; border: 1px solid red")
+    box.setStyleSheet("background-color: rgba(255, 0, 0, 85); font-weight: bold; border: 1px solid red")
     box.setWordWrap(True)
     font = box.font()
     font.setPointSize(6) 
@@ -61,46 +66,133 @@ def drawBox(w,h,x,y,cv_image,text):
 
     boxes.append(box)
 
+def findNeighboringBlackPixels(x, y, area_bw, cv_image, visited_pixels):
+    try:
+        if len(visited_pixels) >= 300:
+            return False
+
+        visited_pixels.add((x, y))  # Mark current pixel as visited
+
+        # Define the neighborhood offsets (8 directions)
+        neighborhood_offsets = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
+
+        # Recursively search for neighboring black pixels
+        for dx, dy in neighborhood_offsets:
+            new_x = x + dx
+            new_y = y + dy
+
+            if new_x >= 0 and new_x < area_bw.shape[1] and new_y >= 0 and new_y < area_bw.shape[0]:
+                if area_bw[new_y, new_x] == 0 and (new_x, new_y) not in visited_pixels:
+                    findNeighboringBlackPixels(new_x, new_y, area_bw, cv_image, visited_pixels)
+
+        return True
+    except Exception as e:
+        error("findNeighboringBlackPixels", e) 
+
+def exploreAndColor(x, y, cv_image, area_bw):
+    global self2, pixmap2
+    stack = [(x, y)]
+    pixelsGreen = set()
+    pixelsGray = set()
+
+    while stack:
+        x, y = stack.pop()
+
+        if x < 0 or x >= cv_image.shape[1] or y < 0 or y >= cv_image.shape[0]:
+            continue
+        
+        neighborhood_offsets = [
+            (0, 0), (1, 0), (-1, 0), (0, 1), (0, -1),  # Within 1-pixel radius
+            (1, 1), (-1, -1), (1, -1), (-1, 1),       # Diagonal within 1-pixel radius
+            (2, 0), (-2, 0), (0, 2), (0, -2),        # Within 2-pixel radius
+            (2, 1), (-2, 1), (2, -1), (-2, -1),      # Square within 2-pixel radius
+            (1, 2), (-1, 2), (1, -2), (-1, -2)       # Square within 2-pixel radius
+        ]
+    
+        exit = False
+        for dx, dy in neighborhood_offsets:
+            new_x = x + dx
+            new_y = y + dy
+            if new_x >= 0 and new_x < area_bw.shape[1] and new_y >= 0 and new_y < area_bw.shape[0]:
+                if area_bw[new_y, new_x] == 0:
+                    for dx, dy in neighborhood_offsets:
+                        new_x = x + dx
+                        new_y = y + dy
+                        if new_x >= 0 and new_x < area_bw.shape[1] and new_y >= 0 and new_y < area_bw.shape[0]:
+                            cv_image[new_y, new_x] = [0, 255, 0]  # Color it green
+                            area_bw[new_y, new_x] = 128
+                            pixelsGreen.add((new_y, new_x))
+                    empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
+                    setEmptyImage(empty_image)
+                    setImage(self2, pixmap2, False)
+                    exit = True
+                if exit:
+                    continue
+
+        if area_bw[y, x] == 128:
+            continue
+
+        cv_image[y, x] = [200, 200, 200]
+        area_bw[y, x] = 128
+        pixelsGray.add((y, x))
+
+        stack.append((x - 1, y))
+        stack.append((x + 1, y))
+        stack.append((x, y - 1))
+        stack.append((x, y + 1))
+
 def fillArea(x1, x2, y1, y2, cv_image):
+    global magenta_pixel_coordinates, area_bw, centers
+    log(f'{bold(color("#d1cd4b","💬🔍 Bubble anaylsis in progress..."))}', True)
     # Ensure the coordinates are within bounds
     x1 = max(0, x1)
     y1 = max(0, y1)
     x2 = min(x2, cv_image.shape[1])
     y2 = min(y2, cv_image.shape[0])
 
-    # Extract the specified area from the image
-    area = cv_image[y1:y2, x1:x2]
+    black_pixel_coordinates = set()
 
-    # Convert the area to grayscale
-    area_gray = cv2.cvtColor(area, cv2.COLOR_BGR2GRAY)
+    # Iterate through the area_bw image to find letters
+    for y in range(y1, y2):
+        for x in range(x1, x2):
+            if area_bw[y, x] == 0:  # Check for black pixel
+                findNeighboringBlackPixels(x, y, area_bw, cv_image, black_pixel_coordinates)
+                if len(black_pixel_coordinates) < 300:
+                    for px, py in black_pixel_coordinates:
+                        cv_image[py, px] = [255, 255, 255]
+                        area_bw[py, px] = 255
+                        magenta_pixel_coordinates.add((py, px))
+            cv_image[y, x] = [255, 255, 255]
 
-    # Convert grayscale to binary (black and white) using a threshold
-    _, area_bw = cv2.threshold(area_gray, 128, 255, cv2.THRESH_BINARY)
-
-    # Calculate the unique pixel values and their counts in the area
-    pixel_counter = Counter(area_bw.flatten())
-
-    # Print or log the counts of black and white pixels
-    log(f"Pixels", True)
-    for pixel_value, count in pixel_counter.items():
-        log(f'Pixel value {pixel_value}: Count {bold(color("#4eaf4a",f"[{count}]"))}', False)
+            black_pixel_coordinates.clear()
 
     # Find the first white pixel from the center
     center_x = (x1 + x2) // 2
     center_y = (y1 + y2) // 2
-    for y in range(center_y, y2):
-        for x in range(center_x, x2):
-            if area_bw[y - y1, x - x1] == 255:  # Adjusted indices
-                # Color the pixel blue
-                cv_image[y, x] = [255, 0, 0]  # BGR color
-                cv_image[y+1, x] = [255, 0, 0]  # BGR color
-                cv_image[y-1, x] = [255, 0, 0]  # BGR color
-                cv_image[y, x+1] = [255, 0, 0]  # BGR color
-                cv_image[y, x-1] = [255, 0, 0]  # BGR color
-                break
-        else:
-            continue
-        break
+    centers.add((center_x, center_y))
+    log(f'{bold(color("#d1cd4b","💬✅ Bubble anaylsis in finished."))}', True)
+
+def colorText(cv_image):
+    global self2, pixmap2, magenta_pixel_coordinates
+    log(f'{bold(color("#d14bc1","📝 Coloring text."))}', True)
+    for px, py in magenta_pixel_coordinates:
+        cv_image[px, py] = [255, 0, 255]
+    magenta_pixel_coordinates.clear()
+    empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
+    setEmptyImage(empty_image)
+    setImage(self2, pixmap2, False)
+    log(f'{bold(color("#d14bc1","✍️✅ Coloring finished."))}', True)
+
+def colorBubble(cv_image):
+    global centers
+    log(f'{bold(color("#73c5d1","🖋️ Coloring bubbles."))}', True)
+    for center_x, center_y in centers:
+        exploreAndColor(center_x, center_y, cv_image, area_bw)
+    centers.clear()
+    empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
+    setEmptyImage(empty_image)
+    setImage(self2, pixmap2, False)
+    log(f'{bold(color("#73c5d1","🖋️✅ Coloring bubbles finished."))}', True)
 
 def group_boxes(boxes):
     log(f'{bold(color("#a477b8","📁 Beginning the process of clustering nearby boxes."))}', True)
@@ -172,21 +264,25 @@ def findSpeechBubbleContour(cv_image, rect_coordinates):
     return None
 
 def drawBoxes(grouped_boxes, cv_image, self, pixmap):
+    log(f'{bold(color("#c9b34f","🖋️ Commencing drawing of boxes and text."))}', True)
     for index, (bbox, text) in enumerate(grouped_boxes):
-            x_points, y_points = zip(*bbox)
-            x1, x2 = int(min(x_points)), int(max(x_points))
-            y1, y2 = int(min(y_points)), int(max(y_points))
-            
-            drawBox(x2-x1,y2-y1,x1,y1,cv_image, text)
-            fillArea(x1, x2, y1, y2, cv_image)
+        x_points, y_points = zip(*bbox)
+        x1, x2 = int(min(x_points)), int(max(x_points))
+        y1, y2 = int(min(y_points)), int(max(y_points))
+        
+        drawBox(x2-x1,y2-y1,x1,y1,cv_image, text)
+        fillArea(x1, x2, y1, y2, cv_image)
 
-            empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-            setEmptyImage(empty_image)
-            setImage(self, pixmap, False)
-            log(f'Completed processing box {bold(color("#4eaf4a",f"[{index+1}]"))}', True)
-            QApplication.processEvents()
+        empty_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
+        setEmptyImage(empty_image)
+        setImage(self, pixmap)
+        log(f'Completed processing box {bold(color("#4eaf4a",f"[{index+1}]"))}', True)
+    log(f'{bold(color("#c9b34f","✅ Box and text drawing completed successfully."))}', True)
 
 def detect_and_draw_speech_bubbles(self, pixmap):
+    global self2, pixmap2, area_bw
+    self2 = self
+    pixmap2 = pixmap
     deleteBoxes()
     QApplication.processEvents()
     empty_image = getEmptyImage()
@@ -194,29 +290,28 @@ def detect_and_draw_speech_bubbles(self, pixmap):
     log(f'🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 ', True)
     log(f'{bold(color("#00c8ff","🔍 Initiating speech bubble detection process ..."))}', True)
     
-    try:
-        cv_image = cv2.cvtColor(np.array(empty_image), cv2.COLOR_RGB2BGR)
-        gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+    cv_image = cv2.cvtColor(np.array(empty_image), cv2.COLOR_RGB2BGR)
+    gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
-        log(f'{bold(color("#db3030","📖 Commencing EasyOCR text extraction..."))}', True)
-        reader = easyocr.Reader(lang_list=['en']) 
-        results = reader.readtext(gray_image)
-        log(f'{bold(color("#db3030","✅ EasyOCR reader concluded."))}', True)
+    log(f'{bold(color("#db3030","📖 Commencing EasyOCR text extraction..."))}', True)
+    reader = easyocr.Reader(lang_list=['en', 'ja'])
+    results = reader.readtext(gray_image)
+    log(f'{bold(color("#db3030","✅ EasyOCR reader concluded."))}', True)
 
-        grouped_boxes = group_boxes(results)
+    grouped_boxes = group_boxes(results)
 
-        log(f'{bold(color("#c9b34f","🖋️ Commencing drawing of boxes and text."))}', True)
-        drawBoxes(grouped_boxes, cv_image, self, pixmap)
-        log(f'{bold(color("#c9b34f","✅ Box and text drawing completed successfully."))}', True)
-
-        log(f'{bold(color("#00c8ff","✅ Speech bubble detection process successfully accomplished."))}', True)
-        log(f'🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 ', True)
-        log(f'', True)
+    _, area_bw = cv2.threshold(gray_image, 160, 255, cv2.THRESH_BINARY)
+    _, cv_image = cv2.threshold(gray_image, 160, 255, cv2.THRESH_BINARY)
+    cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
     
-    except Exception as e:
-        log(f'', True)
-        log(f'❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ', True)
-        log(f'{bold(color("#ff0000","💥 An error occurred:"))} {str(e)}', True)
-        log(f'❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ', True)
-        log(f'', True)
-        print(f"An error occurred: {str(e)}")
+    empty_image = Image.fromarray(cv2.cvtColor(area_bw, cv2.COLOR_BGR2RGB))
+    setEmptyImage(empty_image)
+    setImage(self2, pixmap2, False)
+
+    drawBoxes(grouped_boxes, cv_image, self, pixmap)
+    colorBubble(cv_image)
+    colorText(cv_image)
+
+    log(f'{bold(color("#00c8ff","✅ Speech bubble detection process successfully accomplished."))}', True)
+    log(f'🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 ', True)
+    log(f'', True)

@@ -13,4 +13,4 @@ class ConvertToBWButton(QPushButton):
 
         if pixmap:           
             convertToBW()
-            pixmap = setImage(self, pixmap)
+            pixmap = setImage(self, pixmap, False)

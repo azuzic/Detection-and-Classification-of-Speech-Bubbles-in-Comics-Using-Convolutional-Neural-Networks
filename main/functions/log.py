@@ -24,6 +24,15 @@ def log(text, br):
         counter+=1
     logs += f'{text}'
     
-    if console_log_gui:
-        console_log_gui.setText(logs)
+    if console_log_gui.log:
+        console_log_gui.log.setText(logs)
+        console_log_gui.log_scroll_area.verticalScrollBar().setValue(console_log_gui.log_scroll_area.verticalScrollBar().maximum())
         QApplication.processEvents()
+
+def error(text,e):
+    log(f'', True)
+    log(f'❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ', True)
+    log(f'{bold(color("#ff0000",f"💥 An error in [{text}] occurred:"))} {str(e)}', True)
+    log(f'❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ', True)
+    log(f'', True)
+    print(f"An error occurred: {str(e)}")

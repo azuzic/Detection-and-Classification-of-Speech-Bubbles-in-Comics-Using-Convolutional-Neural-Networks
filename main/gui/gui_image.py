@@ -48,7 +48,7 @@ class GuiImage(QWidget):
         # Log
         self.log = QLabel("", parent)
         self.log.setStyleSheet("color: #c8d8de;")
-        initialiseLog(self.log)
+        initialiseLog(self)
         self.log.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.log.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.log_scroll_area.setWidget(self.log)

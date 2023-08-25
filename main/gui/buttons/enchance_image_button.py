@@ -15,4 +15,4 @@ class EnchanceImageButton(QPushButton):
             value, ok = QInputDialog.getDouble(self, "Enhance Image", "Enter contrast enhancement factor:", 1.0, 0.1, 1000.0, 1)        
             if ok:
                 imageContrast(value)
-                pixmap = setImage(self, pixmap)
+                pixmap = setImage(self, pixmap, False)
