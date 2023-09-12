@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QApplication
 from PIL import Image
 import numpy as np
 import easyocr
-import secrets
 import cv2
 
 from PyQt5.QtWidgets import QLabel
@@ -108,11 +107,7 @@ def exploreAndColor(x, y, cv_image, area_bw):
             continue
         
         neighborhood_offsets = [
-            (0, 0), (1, 0), (-1, 0), (0, 1), (0, -1),  # Within 1-pixel radius
-            (1, 1), (-1, -1), (1, -1), (-1, 1),       # Diagonal within 1-pixel radius
-            (2, 0), (-2, 0), (0, 2), (0, -2),        # Within 2-pixel radius
-            (2, 1), (-2, 1), (2, -1), (-2, -1),      # Square within 2-pixel radius
-            (1, 2), (-1, 2), (1, -2), (-1, -2)       # Square within 2-pixel radius
+            (0, 0),
         ]
     
         exit = False
@@ -173,7 +168,7 @@ def fillArea(x1, x2, y1, y2, cv_image):
                         cv_image[py, px] = [255, 255, 255]
                         area_bw[py, px] = 255
                         magenta_pixel_coordinates.add((py, px))
-            cv_image[y, x] = [255, 255, 255]
+            #cv_image[y, x] = [255, 255, 255]
 
             black_pixel_coordinates.clear()
 
@@ -222,6 +217,7 @@ def group_boxes(boxes):
         i = 0
         while i < len(boxes):
             bbox_i, text_i, prob_i = boxes[i]
+            
             x_points_i, y_points_i = zip(*bbox_i)
 
             x1_i, x2_i = min(x_points_i), max(x_points_i)
@@ -290,6 +286,10 @@ def drawBoxes(grouped_boxes, cv_image, self, pixmap):
         log(f'Completed processing box {bold(color("#4eaf4a",f"[{index+1}]"))}', True)
     log(f'{bold(color("#c9b34f","✅ Box and text drawing completed successfully."))}', True)
 
+def THRESH_BINARY(cv_image, gray_image, maxval, thresh):
+    _, cv_image = cv2.threshold(gray_image, thresh, maxval, cv2.THRESH_BINARY)
+    cv2.imwrite(f'output/{getImageName()}_THRESH_BINARY_{thresh}_{maxval}.png', cv_image)
+
 def detect_and_draw_speech_bubbles(self, pixmap):
     global self2, pixmap2, area_bw, lang
     self2 = self
@@ -314,6 +314,7 @@ def detect_and_draw_speech_bubbles(self, pixmap):
 
     _, area_bw = cv2.threshold(gray_image, 160, 255, cv2.THRESH_BINARY)
     _, cv_image = cv2.threshold(gray_image, 160, 255, cv2.THRESH_BINARY)
+
     cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
     
     empty_image = Image.fromarray(cv2.cvtColor(area_bw, cv2.COLOR_BGR2RGB))
@@ -321,10 +322,10 @@ def detect_and_draw_speech_bubbles(self, pixmap):
     setImage(self2, pixmap2, False)
 
     drawBoxes(grouped_boxes, cv_image, self, pixmap)
-    colorBubble(cv_image)
     colorText(cv_image)
+    colorBubble(cv_image)
 
-    cv2.imwrite(f'output/{getImageName()}.jpg', cv_image)
+    cv2.imwrite(f'output/{getImageName()}.png', cv_image)
 
     log(f'{bold(color("#00c8ff","✅ Speech bubble detection process successfully accomplished."))}', True)
     log(f'🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 🏁 ', True)
