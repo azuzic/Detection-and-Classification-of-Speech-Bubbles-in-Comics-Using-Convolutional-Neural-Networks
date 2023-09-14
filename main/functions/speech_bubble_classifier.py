@@ -1,57 +1,106 @@
-from keras.preprocessing.image import ImageDataGenerator
-from speech_bubble_model import create_model
-import cv2
+from keras.preprocessing import image
+from keras.models import load_model
+import numpy as np
+from functions.log import log, color, bold
+import os
 
-# Define the path to your data folder
-data_dir = 'processed_data'
+# Load the trained model
+model = None
+number = 4
 
-# Define the classes
-classes = ['1 - basic', '2 - double', '3 - loud', '4 - thinking', '5 - narration']
+# Define the class labels
+class_labels = ['🟦 basic', '🔄 double', '🔊 loud', '💭 thinking', '📖 narration']
 
-# Set the dimensions for input images
-img_width, img_height = 150, 150
+def set_model(value): 
+    global model, number
+    number = value
+    # Define the path to the folder containing the models
+    models_folder = "models/trained_models"
 
-# Define the batch size
-batch_size = 32
+    # Get a list of files in the folder
+    model_files = os.listdir(models_folder)
+    model_files = [file for file in model_files]
+    model = load_model(f'models/trained_models/{model_files[value]}')
 
-# Define the number of epochs
-epochs = 20
+def classify_images():
+    global model
+    if (model == None):
+        set_model(4)
 
-# Define the percentage of data to use for validation
-validation_split = 0.2
+    models_folder = "output/extracted_bubbles"
+    model_files = os.listdir(models_folder)
 
-# Create data generators for training and validation
-datagen = ImageDataGenerator(
-    rescale=1.0/255.0,
-    validation_split=validation_split,
-)
+    log(bold("🚀🚀🚀 STARTED CLASSIFYING SPEECH BUBBLES 🚀🚀🚀"), True)
+    for file in model_files:
+        # Load and preprocess the image
+        img = image.load_img(f"output/extracted_bubbles/{file}", target_size=(256, 256))
+        img = image.img_to_array(img)
+        img = np.expand_dims(img, axis=0)
+        img = img / 255.0  # Normalize the image data
 
-train_generator = datagen.flow_from_directory(
-    data_dir,
-    target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='categorical',
-    subset='training',
-    classes=classes
-)
+        # Make predictions
+        predictions = model.predict(img)
 
-validation_generator = datagen.flow_from_directory(
-    data_dir,
-    target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='categorical',
-    subset='validation',
-    classes=classes
-)
+        # Get the predicted class index
+        predicted_class_index = np.argmax(predictions)
 
-model = create_model(img_width, img_height, classes)
+        # Get the corresponding class label
+        predicted_class_label = class_labels[predicted_class_index]
 
-model.fit(
-    train_generator,
-    steps_per_epoch=train_generator.samples // batch_size,
-    epochs=epochs,
-    validation_data=validation_generator,
-    validation_steps=validation_generator.samples // batch_size
-)
+        # Get the percentage likelihood for each class
+        class_percentages = predictions[0] * 100.0
 
-model.save('speech_bubble_recognition_model.keras')
+        # Find the index of the class with the highest percentage likelihood
+        highest_percentage_index = np.argmax(class_percentages)
+
+        # Print the results
+        log(bold(" - Class Probabilities - "), True)
+        for i, label in enumerate(class_labels):
+            if highest_percentage_index != i:
+                log(f"{label}: {color('#b32f25',f'{class_percentages[i]:.2f}%')}", True)
+            else:
+                log(f"{label}: {color('#5ab54e',f'{class_percentages[i]:.2f}%')}", True)
+
+        log(bold(f'The image {os.path.splitext(file)[0]} is classified as: {color("#5ab54e",predicted_class_label)}'), True)
+        log(f"", True)
+    
+    log(bold("🏁🏁🏁 CLASSIFYING ENDED 🏁🏁🏁"), True)
+
+def classify_image(file, name):
+    global model, number
+    if (model == None):
+        set_model(number)
+    
+    log(bold(f"Using model {number}"), True)
+    # Load and preprocess the image
+    img = image.load_img(file, target_size=(256, 256))
+    img = image.img_to_array(img)
+    img = np.expand_dims(img, axis=0)
+    img = img / 255.0  # Normalize the image data
+
+    # Make predictions
+    predictions = model.predict(img)
+
+    # Get the predicted class index
+    predicted_class_index = np.argmax(predictions)
+
+    # Get the corresponding class label
+    predicted_class_label = class_labels[predicted_class_index]
+
+    # Get the percentage likelihood for each class
+    class_percentages = predictions[0] * 100.0
+
+    # Find the index of the class with the highest percentage likelihood
+    highest_percentage_index = np.argmax(class_percentages)
+
+    # Print the results
+    log(bold(" - Class Probabilities - "), True)
+    for i, label in enumerate(class_labels):
+        if highest_percentage_index != i:
+            log(f"{label}: {color('#b32f25',f'{class_percentages[i]:.2f}%')}", True)
+        else:
+            log(f"{label}: {color('#5ab54e',f'{class_percentages[i]:.2f}%')}", True)
+
+    log(bold(f'The image {name} is classified as: {color("#5ab54e",predicted_class_label)}'), True)
+    log(f"", True)
+    return predicted_class_label

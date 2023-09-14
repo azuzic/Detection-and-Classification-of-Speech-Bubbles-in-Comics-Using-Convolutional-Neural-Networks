@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QLabel, QScrollArea, QVBoxLayout, QHBoxLayout, QFrame, QStackedLayout
+from PyQt5.QtWidgets import QWidget, QLabel, QScrollArea, QVBoxLayout, QHBoxLayout, QFrame, QTextBrowser 
 
 from functions.log import initialiseLog
 from functions.speech_bubble_extraction import initialiseImageLayout
@@ -46,7 +46,7 @@ class GuiImage(QWidget):
         log_layout.addWidget(self.log_scroll_area)
         
         # Log
-        self.log = QLabel("", parent)
+        self.log = QTextBrowser(parent)
         self.log.setStyleSheet("color: #c8d8de;")
         initialiseLog(self)
         self.log.setAlignment(Qt.AlignmentFlag.AlignTop)

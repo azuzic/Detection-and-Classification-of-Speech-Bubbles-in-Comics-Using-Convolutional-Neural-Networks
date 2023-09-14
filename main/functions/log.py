@@ -17,6 +17,7 @@ def initialiseLog(gui):
     
 def log(text, br):
     global logs, counter, console_log_gui
+    logs = ""
     if (br and counter > 1):
         logs += "<br/>"
     if (br):
@@ -25,8 +26,9 @@ def log(text, br):
     logs += f'{text}'
     
     if console_log_gui.log:
-        console_log_gui.log.setText(logs)
-        console_log_gui.log_scroll_area.verticalScrollBar().setValue(console_log_gui.log_scroll_area.verticalScrollBar().maximum())
+        console_log_gui.log.insertHtml(logs)
+        scrollbar = console_log_gui.log.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
         QApplication.processEvents()
 
 def error(text,e):
@@ -36,7 +38,3 @@ def error(text,e):
     log(f'❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ❗️ ', True)
     log(f'', True)
     print(f"An error occurred: {str(e)}")
-
-def logClear():
-    global logs
-    logs = ""

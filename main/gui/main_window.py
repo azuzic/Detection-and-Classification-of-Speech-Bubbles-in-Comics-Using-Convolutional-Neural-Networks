@@ -6,6 +6,9 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # Set the default size of the main window
+        self.resize(1620, 920)
+
         # Title and theme
         self.setWindowTitle("Detection and Classification of Speech Bubbles in Comics Using Convolutional Neural Networks")
         set_dark_palette(self)
