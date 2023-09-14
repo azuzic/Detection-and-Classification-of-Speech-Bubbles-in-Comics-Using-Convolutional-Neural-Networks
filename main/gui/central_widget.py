@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QTabWidget, QSizePolicy, QScrollArea
 from gui.gui_image import GuiImage
 from gui.buttons.open_image_button import OpenImageButton
+from gui.buttons.convert_to_bw_button import ConvertToBWButton
 from gui.buttons.find_speech_bubbles_button import FindSpeechBubblesButton
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
